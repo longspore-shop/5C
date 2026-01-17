@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Quản Lý Cửa Hàng</title>
+
+    <!-- Tailwind CSS (Styling) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Icons (Phosphor Icons) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Excel Library (SheetJS) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+    <!-- Chart Library (Chart.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- App Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bg-gray-50 text-gray-800 font-sans h-screen flex flex-col overflow-hidden leading-relaxed select-none">
+
+    <!-- Notification / Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Login Modal (Admin Pin) -->
+    <div id="login-modal"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 transform transition-all scale-100">
+            <h2 class="text-2xl font-bold text-center mb-2 text-gray-900">Xác thực Admin</h2>
+            <p class="text-center text-gray-500 mb-6 text-sm">Nhập mã PIN để tiếp tục thao tác này</p>
+
+            <div class="flex justify-center gap-2 mb-6" id="pin-display">
+                <div class="w-3 h-3 rounded-full bg-gray-200 pin-dot"></div>
+                <div class="w-3 h-3 rounded-full bg-gray-200 pin-dot"></div>
+                <div class="w-3 h-3 rounded-full bg-gray-200 pin-dot"></div>
+                <div class="w-3 h-3 rounded-full bg-gray-200 pin-dot"></div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3 mb-4">
+                <button
+                    class="pin-btn bg-gray-50 hover:bg-gray-100 p-4 rounded-xl text-xl font-semibold transition-colors"
+                    onclick="enterPin(1)">1</button>
+                <button
+                    class="pin-btn bg-gray-50 hover:bg-gray-100 p-4 rounded-xl text-xl font-semibold transition-colors"
+                    onclick="enterPin(2)">2</button>
+                <button
+                    class="pin-btn bg-gray-50 hover:bg-gray-100 p-4 rounded-xl text-xl font-semibold transition-colors"
+                    onclick="enterPin(3)">3</button>
+                <button
+                    class="pin-btn bg-gray-50 hover:bg-gray-100 p-4 rounded-xl text-xl font-semibold transition-colors"
+                    onclick="enterPin(4)">4</button>
+                <button
+                    class="pin-btn bg-gray-50 hover:bg-gray-100 p-4 rounded-xl text-xl font-semibold transition-colors"
+                    onclick="enterPin(5)">5</button>
+                <button
+                    class="pin-btn bg-gray-50 hover:bg-gray-100 p-4 rounded-xl text-xl font-semibold transition-colors"
+                    onclick="enterPin(6)">6</button>
+                <button
+                    class="pin-btn bg-gray-50 hover:bg-gray-100 p-4 rounded-xl text-xl font-semibold transition-colors"
+                    onclick="enterPin(7)">7</button>
+                <button
+                    class="pin-btn bg-gray-50 hover:bg-gray-100 p-4 rounded-xl text-xl font-semibold transition-colors"
+                    onclick="enterPin(8)">8</button>
+                <button
+                    class="pin-btn bg-gray-50 hover:bg-gray-100 p-4 rounded-xl text-xl font-semibold transition-colors"
+                    onclick="enterPin(9)">9</button>
+                <button class="pin-btn bg-transparent p-4 rounded-xl text-xl text-gray-400"
+                    onclick="closeLoginModal()">Hủy</button>
+                <button
+                    class="pin-btn bg-gray-50 hover:bg-gray-100 p-4 rounded-xl text-xl font-semibold transition-colors"
+                    onclick="enterPin(0)">0</button>
+                <button
+                    class="pin-btn bg-transparent hover:bg-red-50 hover:text-red-500 p-4 rounded-xl text-xl text-gray-600 transition-colors"
+                    onclick="clearPin()"><i class="ph ph-backspace"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTENT -->
+    <main id="app-content" class="flex-1 overflow-hidden relative flex flex-col">
+
+        <!-- HEADER -->
+        <header class="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between shrink-0 h-16">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                    <i class="ph ph-storefront text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-gray-900 leading-tight">Cửa Hàng Bán Lẻ</h1>
+                    <p class="text-xs text-gray-500" id="current-date">...</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="exportData()"
+                    class="w-10 h-10 rounded-full bg-gray-50 hover:bg-green-50 text-gray-600 hover:text-green-600 flex items-center justify-center transition-colors border border-transparent hover:border-green-200"
+                    title="Sao lưu Excel">
+                    <i class="ph ph-microsoft-excel-logo text-xl"></i>
+                </button>
+                <button onclick="saveToDrive()"
+                    class="w-10 h-10 rounded-full bg-gray-50 hover:bg-blue-50 text-gray-600 hover:text-blue-600 flex items-center justify-center transition-colors border border-transparent hover:border-blue-200"
+                    title="Lưu lên Google Drive">
+                    <i class="ph ph-google-drive-logo text-xl"></i>
+                </button>
+                <button onclick="toggleAdminMode()" id="admin-toggle-btn"
+                    class="w-10 h-10 rounded-full bg-gray-50 hover:bg-purple-50 text-gray-600 hover:text-purple-600 flex items-center justify-center transition-colors border border-transparent hover:border-purple-200"
+                    title="Chế độ Admin">
+                    <i class="ph ph-shield text-xl"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- VIEW: POS (Sales) -->
+        <section id="view-pos"
+            class="app-view flex-1 flex flex-col md:flex-row overflow-hidden absolute inset-0 top-16 transition-transform duration-300">
+            <!-- Product Grid -->
+            <div class="flex-1 bg-gray-50 flex flex-col overflow-hidden">
+                <!-- Search Bar -->
+                <div class="p-4 pb-2">
+                    <div class="relative">
+                        <i
+                            class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                        <input type="text" id="pos-search" placeholder="Tìm tên hàng, mã hàng..."
+                            class="w-full bg-white border-none rounded-xl py-3 pl-10 pr-4 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none text-base placeholder-gray-400">
+                    </div>
+                    <!-- Categories -->
+                    <div id="category-filter" class="flex gap-2 mt-3 overflow-x-auto pb-2 scrollbar-hide">
+                        <!-- Categories will be injected here by JS -->
+                    </div>
+                </div>
+
+                <!-- Products Grid -->
+                <div id="product-grid"
+                    class="p-4 pt-0 overflow-y-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 content-start pb-20">
+                    <!-- Products will be injected here via JS -->
+                </div>
+            </div>
+
+            <!-- Cart (Slide over on mobile, Sidebar on desktop) -->
+            <div id="cart-panel"
+                class="bg-white w-full md:w-96 flex flex-col border-l border-gray-200 shadow-2xl md:shadow-none z-20 absolute inset-0 md:static translate-y-full md:translate-y-0 transition-transform duration-300 rounded-t-3xl md:rounded-none">
+                <!-- Mobile Drag Handle -->
+                <div class="md:hidden w-full h-6 flex items-center justify-center shrink-0 cursor-pointer"
+                    onclick="toggleCart()">
+                    <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+                </div>
+
+                <div class="p-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+                    <h2 class="font-bold text-lg flex items-center gap-2">
+                        <i class="ph ph-shopping-cart text-blue-600"></i> Giỏ hàng <span id="cart-count"
+                            class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">0</span>
+                    </h2>
+                    <button class="text-red-500 text-sm font-medium hover:bg-red-50 px-2 py-1 rounded"
+                        onclick="clearCart()">Xóa</button>
+                </div>
+
+                <!-- Cart Items - IMPORTANT: calc height to leave space for footer -->
+                <div id="cart-items" class="flex-grow overflow-y-auto p-4 space-y-3"
+                    style="height: calc(100vh - 400px); padding-bottom: 80px;">
+                    <!-- Empty State -->
+                    <div class="h-full flex flex-col items-center justify-center text-gray-400">
+                        <i class="ph ph-shopping-basket text-4xl mb-2 opacity-50"></i>
+                        <p class="text-sm">Chưa có món nào</p>
+                    </div>
+                </div>
+
+                <!-- Footer Summary - ALWAYS VISIBLE - with enough margin from bottom -->
+                <div class="p-4 bg-white border-t-2 border-gray-200 shrink-0 mb-16 md:mb-0">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-gray-500">Tạm tính</span>
+                        <span class="font-medium" id="cart-subtotal">0 ₫</span>
+                    </div>
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-gray-900 font-bold text-lg">Tổng cộng</span>
+                        <span class="text-blue-600 font-bold text-2xl" id="cart-total">0 ₫</span>
+                    </div>
+                    <button onclick="processCheckout()"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition-all text-lg flex items-center justify-center gap-2">
+                        <span>Thanh toán</span>
+                        <i class="ph ph-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Cart Floating Button -->
+            <button onclick="toggleCart()"
+                class="md:hidden fixed bottom-20 right-4 bg-blue-600 text-white p-4 rounded-full shadow-xl shadow-blue-300 z-30 flex items-center justify-center relative">
+                <i class="ph ph-shopping-cart text-2xl"></i>
+                <span id="mobile-cart-badge"
+                    class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">0</span>
+            </button>
+        </section>
+
+        <!-- VIEW: INVENTORY (Admin Only) -->
+        <section id="view-inventory"
+            class="app-view hidden flex-col absolute inset-0 top-16 bg-gray-50 overflow-hidden">
+            <div class="p-4 flex items-center justify-between">
+                <h2 class="text-xl font-bold">Kho Hàng</h2>
+                <button onclick="openProductModal()"
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md font-medium text-sm flex items-center gap-2">
+                    <i class="ph ph-plus-circle"></i> Thêm mới
+                </button>
+            </div>
+            <div class="flex-1 overflow-auto px-4 pb-20">
+                <table class="w-full bg-white rounded-xl shadow-sm overflow-hidden text-sm">
+                    <thead class="bg-gray-100 text-gray-500 text-left">
+                        <tr>
+                            <th class="p-3 font-medium">Tên hàng</th>
+                            <th class="p-3 font-medium text-right">Giá bán</th>
+                            <th class="p-3 font-medium text-right">Tồn</th>
+                            <th class="p-3 font-medium text-center">...</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-list" class="divide-y divide-gray-100">
+                        <!-- Inventory rows will be injected -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- VIEW: REPORTS -->
+        <section id="view-reports" class="app-view hidden flex-col absolute inset-0 top-16 bg-gray-50 overflow-y-auto">
+            <div class="p-4">
+                <h2 class="text-xl font-bold mb-4">Báo Cáo Doanh Thu</h2>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                        <p class="text-gray-500 text-xs font-medium uppercase mb-1">Hôm nay</p>
+                        <h3 class="text-2xl font-bold text-gray-900" id="report-today">0 ₫</h3>
+                        <div class="flex items-center gap-1 text-green-500 text-xs font-medium mt-1">
+                            <i class="ph ph-trend-up"></i>
+                            <span>+12%</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                        <p class="text-gray-500 text-xs font-medium uppercase mb-1">Tháng này</p>
+                        <h3 class="text-2xl font-bold text-gray-900" id="report-month">0 ₫</h3>
+                    </div>
+                </div>
+
+                <!-- Chart -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                    <h3 class="text-sm font-bold text-gray-700 mb-4">Biểu đồ doanh thu (7 ngày)</h3>
+                    <div class="h-64">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="p-4 border-b border-gray-50">
+                        <h3 class="font-bold text-gray-900">Giao dịch gần đây</h3>
+                    </div>
+                    <div id="recent-transactions" class="divide-y divide-gray-50">
+                        <!-- Transactions injected here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- BOTTOM NAVIGATION -->
+    <nav
+        class="bg-white border-t border-gray-200 flex justify-around items-center h-16 shrink-0 z-40 fixed bottom-0 w-full md:pb-0">
+        <button onclick="switchView('pos')"
+            class="nav-btn active flex-1 h-full flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-blue-600 transition-colors"
+            data-target="pos">
+            <i class="ph ph-cash-register text-2xl mb-0.5"></i>
+            <span class="text-[10px] font-bold">Bán hàng</span>
+        </button>
+        <button onclick="switchView('inventory')"
+            class="nav-btn flex-1 h-full flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-blue-600 transition-colors"
+            data-target="inventory">
+            <i class="ph ph-package text-2xl mb-0.5"></i>
+            <span class="text-[10px] font-bold">Kho hàng</span>
+        </button>
+        <button onclick="switchView('reports')"
+            class="nav-btn flex-1 h-full flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-blue-600 transition-colors"
+            data-target="reports">
+            <i class="ph ph-chart-bar text-2xl mb-0.5"></i>
+            <span class="text-[10px] font-bold">Báo cáo</span>
+        </button>
+        <button onclick="showSettings()"
+            class="nav-btn flex-1 h-full flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-blue-600 transition-colors"
+            data-target="settings">
+            <i class="ph ph-gear text-2xl mb-0.5"></i>
+            <span class="text-[10px] font-bold">Cài đặt</span>
+        </button>
+    </nav>
+
+    <!-- Product Modal (Add/Edit) -->
+    <dialog id="product-modal"
+        class="rounded-2xl shadow-2xl p-0 w-full max-w-md backdrop:bg-black/60 backdrop:backdrop-blur-sm">
+        <form id="product-form" onsubmit="event.preventDefault(); saveProduct();">
+            <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="font-bold text-lg" id="modal-title">Thêm sản phẩm</h3>
+                <button type="button" onclick="closeProductModal()" class="text-gray-400 hover:text-red-500">
+                    <i class="ph ph-x text-xl"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tên hàng hóa</label>
+                    <input type="text" id="prod-name" required
+                        class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-blue-500 font-medium">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nhóm hàng</label>
+                    <select id="prod-category"
+                        class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-blue-500 font-medium bg-white">
+                        <option value="Đồ ăn">Đồ ăn</option>
+                        <option value="Đồ uống">Đồ uống</option>
+                        <option value="Khác">Khác</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Giá bán (VNĐ)</label>
+                        <input type="number" id="prod-price" required min="0"
+                            class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-blue-500 font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Giá vốn (VNĐ)</label>
+                        <input type="number" id="prod-cost" min="0"
+                            class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-blue-500 font-medium">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tồn kho</label>
+                        <input type="number" id="prod-stock" required
+                            class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-blue-500 font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Đơn vị</label>
+                        <input type="text" id="prod-unit" placeholder="Cái/Hộp..."
+                            class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-blue-500 font-medium">
+                    </div>
+                </div>
+                <input type="hidden" id="prod-id">
+            </div>
+            <div class="p-5 bg-gray-50 border-t border-gray-100 flex gap-3">
+                <button type="button" onclick="deleteProduct()" id="btn-delete-prod"
+                    class="hidden px-5 py-3 rounded-xl bg-red-100 text-red-600 font-bold hover:bg-red-200 transition-colors">
+                    <i class="ph ph-trash"></i>
+                </button>
+                <button type="submit"
+                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200 transition-colors">
+                    Lưu
+                </button>
+            </div>
+        </form>
+    </dialog>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
