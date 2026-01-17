@@ -202,27 +202,59 @@
         <!-- VIEW: INVENTORY (Admin Only) -->
         <section id="view-inventory"
             class="app-view hidden flex-col absolute inset-0 top-16 bg-gray-50 overflow-hidden">
-            <div class="p-4 flex items-center justify-between">
-                <h2 class="text-xl font-bold">Kho Hàng</h2>
-                <button onclick="openProductModal()"
-                    class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md font-medium text-sm flex items-center gap-2">
-                    <i class="ph ph-plus-circle"></i> Thêm mới
+
+            <!-- Tabs -->
+            <div class="flex border-b border-gray-200 bg-white px-4">
+                <button onclick="switchInventoryTab('products')"
+                    class="inventory-tab active px-4 py-3 font-medium text-sm border-b-2 border-blue-600 text-blue-600">
+                    📦 Hàng hóa
+                </button>
+                <button onclick="switchInventoryTab('categories')"
+                    class="inventory-tab px-4 py-3 font-medium text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                    🏷️ Nhóm hàng
                 </button>
             </div>
-            <div class="flex-1 overflow-auto px-4 pb-20">
-                <table class="w-full bg-white rounded-xl shadow-sm overflow-hidden text-sm">
-                    <thead class="bg-gray-100 text-gray-500 text-left">
-                        <tr>
-                            <th class="p-3 font-medium">Tên hàng</th>
-                            <th class="p-3 font-medium text-right">Giá bán</th>
-                            <th class="p-3 font-medium text-right">Tồn</th>
-                            <th class="p-3 font-medium text-center">...</th>
-                        </tr>
-                    </thead>
-                    <tbody id="inventory-list" class="divide-y divide-gray-100">
-                        <!-- Inventory rows will be injected -->
-                    </tbody>
-                </table>
+
+            <!-- Products Tab -->
+            <div id="inventory-products-tab" class="flex-1 flex flex-col overflow-hidden">
+                <div class="p-4 flex items-center justify-between">
+                    <h2 class="text-xl font-bold">Kho Hàng</h2>
+                    <button onclick="openProductModal()"
+                        class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md font-medium text-sm flex items-center gap-2">
+                        <i class="ph ph-plus-circle"></i> Thêm mới
+                    </button>
+                </div>
+                <div class="flex-1 overflow-auto px-4 pb-20">
+                    <table class="w-full bg-white rounded-xl shadow-sm overflow-hidden text-sm">
+                        <thead class="bg-gray-100 text-gray-500 text-left">
+                            <tr>
+                                <th class="p-3 font-medium">Tên hàng</th>
+                                <th class="p-3 font-medium text-right">Giá bán</th>
+                                <th class="p-3 font-medium text-right">Tồn</th>
+                                <th class="p-3 font-medium text-center">...</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-list" class="divide-y divide-gray-100">
+                            <!-- Inventory rows will be injected -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Categories Tab -->
+            <div id="inventory-categories-tab" class="hidden flex-1 flex flex-col overflow-hidden">
+                <div class="p-4 flex items-center justify-between">
+                    <h2 class="text-xl font-bold">Quản Lý Nhóm Hàng</h2>
+                    <button onclick="openCategoryModal()"
+                        class="bg-green-600 text-white px-4 py-2 rounded-lg shadow-md font-medium text-sm flex items-center gap-2">
+                        <i class="ph ph-plus-circle"></i> Thêm nhóm
+                    </button>
+                </div>
+                <div class="flex-1 overflow-auto px-4 pb-20">
+                    <div id="category-list" class="space-y-3">
+                        <!-- Category items will be injected -->
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -356,6 +388,37 @@
                 </button>
                 <button type="submit"
                     class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200 transition-colors">
+                    Lưu
+                </button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- Category Modal (Add/Edit Category) -->
+    <dialog id="category-modal"
+        class="rounded-2xl shadow-2xl p-0 w-full max-w-md backdrop:bg-black/60 backdrop:backdrop-blur-sm">
+        <form id="category-form" onsubmit="event.preventDefault(); saveCategory();">
+            <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="font-bold text-lg" id="category-modal-title">Thêm nhóm hàng</h3>
+                <button type="button" onclick="closeCategoryModal()" class="text-gray-400 hover:text-red-500">
+                    <i class="ph ph-x text-xl"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tên nhóm hàng</label>
+                    <input type="text" id="category-name" required placeholder="Ví dụ: Đồ ăn vặt"
+                        class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-green-500 font-medium">
+                </div>
+                <input type="hidden" id="category-id">
+            </div>
+            <div class="p-5 bg-gray-50 border-t border-gray-100 flex gap-3">
+                <button type="button" onclick="deleteCategory()" id="btn-delete-category"
+                    class="hidden px-5 py-3 rounded-xl bg-red-100 text-red-600 font-bold hover:bg-red-200 transition-colors">
+                    <i class="ph ph-trash"></i>
+                </button>
+                <button type="submit"
+                    class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-green-200 transition-colors">
                     Lưu
                 </button>
             </div>
